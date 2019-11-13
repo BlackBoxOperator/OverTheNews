@@ -1,5 +1,53 @@
 #!/bin/bash
 
+if grep Arch /etc/os-release;then
+    INSTALL="sudo pacman -S "
+fi
+
+if grep Ubuntu /etc/os-release;then
+    INSTALL="sudo apt install "
+fi
+
+if ! type "curl" > /dev/null 2>&1; then
+    if [ -z "$INSTALL" ];then
+        echo "please install curl"
+        exit
+    fi
+    echo -ne "\ninstalling curl...\n"
+    $INSTALL curl
+fi
+
+if ! type "wget" > /dev/null 2>&1; then
+    if [ -z "$INSTALL" ];then
+        echo "please install wget"
+        exit
+    fi
+    echo -ne "\ninstalling wget...\n"
+    $INSTALL wget
+fi
+
+if ! type "python3.6" > /dev/null 2>&1; then
+    if [ -z "$INSTALL" ];then
+        echo "please install python3.6"
+        exit
+    fi
+    echo -ne "\ninstalling python3.6...\n"
+    if grep Arch /etc/os-release;then
+        yay -S python36 # arch use yay -S python36
+    else
+        $INSTALL python3.6
+    fi
+fi
+
+if ! type "pip3.6" > /dev/null 2>&1; then
+    if [ -z "$INSTALL" ];then
+        echo "please install pip3.6"
+        exit
+    fi
+    echo -ne "\ninstalling pip3.6...\n"
+    curl https://bootstrap.pypa.io/get-pip.py | sudo python3.6
+fi
+
 # download_from_gdrive <FILE_ID> <OUTPUT_FILENAME>
 download_from_gdrive() {
     file_id=$1
@@ -45,5 +93,9 @@ down_large 1_GGMH8AuX-UNwiT6mJpF_h-S4YxxztuQ w2v/news_d200_e100.w2v.wv.vectors.n
 
 # install python requirements
 pip3.6 install -r requirements.txt
+
+# run the model and patch
 python3.6 oracle.py
-python3.6 plugin/patcher.py submit.csv plugin/patcher.py
+python3.6 plugin/patcher.py submit.csv plugin/final.patch
+
+echo "submit_patched.csv is the final result!"
