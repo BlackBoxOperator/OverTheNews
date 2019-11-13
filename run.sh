@@ -19,7 +19,6 @@ check_cmd(){
 }
 
 check_cmd curl "$INSTALL curl"
-check_cmd wget "$INSTALL wget"
 check_cmd python3.6 \
     "if grep Arch /etc/os-release;then
         yay -S python36
