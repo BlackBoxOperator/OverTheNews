@@ -31,15 +31,17 @@ check_cmd pip3.6 "curl https://bootstrap.pypa.io/get-pip.py | sudo python3.6"
 download_from_gdrive() {
     file_id=$1
     file_name=$2 # first stage to get the warning html
-    curl -L -o $file_name -c /tmp/cookies \
-    "https://drive.google.com/uc?export=download&id=$file_id"
-    if grep "Virus scan warning" $file_name > /dev/null;then
-        # second stage to extract the download link from html above
-        download_link=$(cat $file_name | \
-        grep -Po 'uc-download-link" [^>]* href="\K[^"]*' | \
-        sed 's/\&amp;/\&/g')
-        curl -L -b /tmp/cookies \
-        "https://drive.google.com$download_link" > $file_name
+    if [ ! -f $file_name ];then
+        curl -L -o $file_name -c /tmp/cookies \
+        "https://drive.google.com/uc?export=download&id=$file_id"
+        if grep "Virus scan warning" $file_name > /dev/null;then
+            # second stage to extract the download link from html above
+            download_link=$(cat $file_name | \
+            grep -Po 'uc-download-link" [^>]* href="\K[^"]*' | \
+            sed 's/\&amp;/\&/g')
+            curl -L -b /tmp/cookies \
+            "https://drive.google.com$download_link" > $file_name
+        fi
     fi
 }
 
