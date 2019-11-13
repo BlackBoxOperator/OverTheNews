@@ -2,51 +2,31 @@
 
 if grep Arch /etc/os-release;then
     INSTALL="sudo pacman -S "
-fi
-
-if grep Ubuntu /etc/os-release;then
+elif grep Ubuntu /etc/os-release;then
     INSTALL="sudo apt install "
 fi
 
-if ! type "curl" > /dev/null 2>&1; then
-    if [ -z "$INSTALL" ];then
-        echo "please install curl"
-        exit
+check_cmd(){
+    cmd=$1
+    install=$2
+    if ! type "$cmd" > /dev/null 2>&1; then
+        if [ -z "$INSTALL" ];then
+            echo "please install $cmd"; exit
+        fi
+        echo -ne "\ninstalling $cmd...\n\n"
+        eval "$install"
     fi
-    echo -ne "\ninstalling curl...\n"
-    $INSTALL curl
-fi
+}
 
-if ! type "wget" > /dev/null 2>&1; then
-    if [ -z "$INSTALL" ];then
-        echo "please install wget"
-        exit
-    fi
-    echo -ne "\ninstalling wget...\n"
-    $INSTALL wget
-fi
-
-if ! type "python3.6" > /dev/null 2>&1; then
-    if [ -z "$INSTALL" ];then
-        echo "please install python3.6"
-        exit
-    fi
-    echo -ne "\ninstalling python3.6...\n"
-    if grep Arch /etc/os-release;then
-        yay -S python36 # arch use yay -S python36
+check_cmd curl "$INSTALL curl"
+check_cmd wget "$INSTALL wget"
+check_cmd python3.6 \
+    "if grep Arch /etc/os-release;then
+        yay -S python36
     else
         $INSTALL python3.6
-    fi
-fi
-
-if ! type "pip3.6" > /dev/null 2>&1; then
-    if [ -z "$INSTALL" ];then
-        echo "please install pip3.6"
-        exit
-    fi
-    echo -ne "\ninstalling pip3.6...\n"
-    curl https://bootstrap.pypa.io/get-pip.py | sudo python3.6
-fi
+    fi"
+check_cmd pip3.6 "curl https://bootstrap.pypa.io/get-pip.py | sudo python3.6"
 
 # download_from_gdrive <FILE_ID> <OUTPUT_FILENAME>
 download_from_gdrive() {
@@ -63,33 +43,24 @@ download_from_gdrive() {
     "https://drive.google.com$download_link" > $file_name
 }
 
-down_small() {
-    file_id=$1
-    file_name=$2
-    if [ ! -f $file_name ];then
-        wget --no-check-certificate \
-            "https://drive.google.com/uc?export=download&id=${file_id}" \
-            -O $file_name
-    fi
-}
-
-down_large() {
-    file_id=$1
-    file_name=$2
-    if [ ! -f $file_name ];then
-        download_from_gdrive $file_id $file_name
-    fi
+down(){
+    case $1 in
+        "large") download_from_gdrive $2 $3 ;;
+        "small") wget --no-check-certificate \
+            "https://drive.google.com/uc?export=download&id=$2" -O $3 ;;
+        *)  echo 'invalid option'; exit ;;
+    esac
 }
 
 # download corpus files
-down_small 1avkR7mu2mMnIcynhqEGc0ftnMFfBwHDA corpus/60w_title.txt
-down_large 1VwjLCVfByaO5ywBFg_nmjp9RlJBRevCk corpus/60w_token.txt
-down_small 1Eveuc2Yd12ehBmM-pmNde4ij1IUXDRMF corpus/60w_tokey.txt
+down small 1avkR7mu2mMnIcynhqEGc0ftnMFfBwHDA corpus/60w_title.txt
+down large 1VwjLCVfByaO5ywBFg_nmjp9RlJBRevCk corpus/60w_token.txt
+down small 1Eveuc2Yd12ehBmM-pmNde4ij1IUXDRMF corpus/60w_tokey.txt
 
 # download word2vector models
-down_small 1oJZGdpu2Mm-Ga13H_5qxJeZ-nsHjn-NM w2v/news_d200_e100.w2v
-down_large 11h5ZFbVAsqd41YnmM11TSZia1Sz563WM w2v/news_d200_e100.w2v.trainables.syn1neg.npy
-down_large 1_GGMH8AuX-UNwiT6mJpF_h-S4YxxztuQ w2v/news_d200_e100.w2v.wv.vectors.npy
+down small 1oJZGdpu2Mm-Ga13H_5qxJeZ-nsHjn-NM w2v/news_d200_e100.w2v
+down large 11h5ZFbVAsqd41YnmM11TSZia1Sz563WM w2v/news_d200_e100.w2v.trainables.syn1neg.npy
+down large 1_GGMH8AuX-UNwiT6mJpF_h-S4YxxztuQ w2v/news_d200_e100.w2v.wv.vectors.npy
 
 # install python requirements
 pip3.6 install -r requirements.txt
